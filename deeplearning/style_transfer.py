@@ -20,7 +20,8 @@ def content_loss(content_weight, content_current, content_target):
     ##############################################################################
     #                               YOUR CODE HERE                               #
     ##############################################################################
-    return None
+    loss = content_weight * torch.sum(torch.square(torch.sub(content_current, content_target)))
+    return loss
     ##############################################################################
     #                               END OF YOUR CODE                             #
     ##############################################################################
@@ -43,7 +44,12 @@ def gram_matrix(features, normalize=True):
     ##############################################################################
     #                               YOUR CODE HERE                               #
     ##############################################################################
-    return None
+    N, C, H, W = features.size()
+    feature_reshape = features.view(N, C, H * W)
+    gram = torch.einsum("ijk, ikt->ijt", feature_reshape, feature_reshape.permute(0,2,1))
+    if normalize:
+      return gram.div(H * W * C)
+    return gram
     ##############################################################################
     #                               END OF YOUR CODE                             #
     ##############################################################################
@@ -72,7 +78,13 @@ def style_loss(feats, style_layers, style_targets, style_weights):
     ##############################################################################
     #                               YOUR CODE HERE                               #
     ##############################################################################
-    return None
+    style_loss = torch.zeros(1)
+    for i in range(len(style_layers)):
+      gram_cur = gram_matrix(feats[style_layers[i]])
+      gram_source = style_targets[i]
+      weight = torch.tensor(style_weights[i], dtype=torch.float64)
+      style_loss = torch.add(style_loss,torch.mul(weight, torch.sum(torch.square(torch.sub(gram_cur, gram_source)))))
+    return style_loss
     ##############################################################################
     #                               END OF YOUR CODE                             #
     ##############################################################################
@@ -94,7 +106,10 @@ def tv_loss(img, tv_weight):
     ##############################################################################
     #                               YOUR CODE HERE                               #
     ##############################################################################
-    return None
+    tv_h = torch.sum(torch.square(torch.sub(img[:,:,1:,:], img[:,:,:-1,:])))
+    tv_v = torch.sum(torch.square(torch.sub(img[:,:,:,1:], img[:,:,:,:-1])))
+    loss = torch.mul(tv_weight, torch.add(tv_h, tv_v))
+    return loss
     ##############################################################################
     #                               END OF YOUR CODE                             #
     ##############################################################################
